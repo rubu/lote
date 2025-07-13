@@ -20,7 +20,7 @@ Napi::Value Transcribe(const Napi::CallbackInfo &callback_info)
     const auto &audio_data = callback_info[1].As<Napi::Buffer<float>>();
     return Napi::String::New(env, Transcribe(model_path, audio_data.Data(), audio_data.Length()));
 }
-
+ 
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
     exports.Set(Napi::String::New(env, "getNapiVersion"), Napi::Function::New<GetNapiVersion>(env));

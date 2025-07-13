@@ -113,7 +113,7 @@ function App() {
       </div>
       <div id="conversation-container">
         {recordings.map((recording, index) => (
-          <ConversationEntry className="conversation-entry" key={index} recording={recording} />
+          <ConversationEntry className="conversation-entry" key={index} recording={recording} apiEndpoint={apiEndpoint} />
         ))}
       </div>
     </>

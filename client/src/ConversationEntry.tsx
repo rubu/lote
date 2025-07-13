@@ -3,7 +3,7 @@ import './ConversationEntry.css'
 import { useState } from 'react'
 import type { Recording } from './Recording'
 
-export default function ConversationEntry({ recording, className }: { recording: Recording; className?: string }) {
+export default function ConversationEntry({ recording, apiEndpoint, className }: { recording: Recording; apiEndpoint: string; className?: string }) {
   let [isTranscribing, setIsTranscribing] = useState(false)
   let [transcription, setTranscription] = useState(recording.transcription)
 
@@ -18,14 +18,14 @@ export default function ConversationEntry({ recording, className }: { recording:
         <button onClick={async () => {
               setIsTranscribing(true) 
               try {
-                let response = await fetch('/api/transcribe', {
+                let response = await fetch(apiEndpoint, {
                   method: 'POST',
                   body: recording.blob,
                   headers: {
                     'Content-Type': recording.mimeType
                   }
                 })
-                let newTranscription = await response.json()
+                let newTranscription = (await response.json()).transcription
                 recording.transcription = newTranscription
                 setTranscription(newTranscription)
                 console.log(transcription)
