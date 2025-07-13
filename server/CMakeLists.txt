@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 12.0)
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/whisper.cpp whisper)
+
 set(HEADERS
     include/lote.hpp
 )
@@ -23,7 +25,7 @@ endif()
 
 add_library(lote ${HEADERS} ${SOURCES})
 target_include_directories(lote PUBLIC include)
-target_link_libraries(lote PUBLIC ${TARGET_LINK_LIBRARIES_LIBRARIES})
+target_link_libraries(lote PUBLIC whisper ${TARGET_LINK_LIBRARIES_LIBRARIES})
 
 add_library(lote-node-addon SHARED src/module.cpp)
 target_include_directories(lote-node-addon PUBLIC  ${CMAKE_JS_INC})
