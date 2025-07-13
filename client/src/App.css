@@ -29,3 +29,8 @@ body, html {
 #api-endpoint {
   width: 100%;
 }
+
+.conversation-entry {
+  margin: 1rem 1rem 1rem 1rem;
+}
+

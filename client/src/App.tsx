@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import { Mic } from 'lucide-react'
 import ConversationEntry from './ConversationEntry'
+import type { Recording } from './Recording'
 
 class VoiceRecorder {
   private mediaRecorder: MediaRecorder
   private chunks: BlobPart[] = []
-  private recordingPromise: Promise<Blob>
+  private recordingPromise: Promise<{ blob: Blob, mimeType: string }>
+  private blobTypes = new Set<string>()
 
   constructor(mediaRecorder: MediaRecorder) {
     console.log(`created voice recorder with audio type ${mediaRecorder.mimeType}`)
@@ -14,25 +16,43 @@ class VoiceRecorder {
     this.mediaRecorder.addEventListener('dataavailable', (event) => {
       console.log(`got audio data (${event.data.size} bytes)`)
       this.chunks.push(event.data)
+      this.blobTypes.add(event.data.type)
     })
     this.recordingPromise = new Promise((resolve) => {
       this.mediaRecorder.addEventListener('stop', () => {
-        let blob = new Blob(this.chunks, { type: 'audio/wav' })
+        if (this.blobTypes.size > 1) {
+          throw new Error(`multiple audio recording chunk types found: ${Array.from(this.blobTypes).join(', ')}`)
+        }
+        let mimeType = this.blobTypes.values().next().value
+        if (!mimeType) {
+          throw new Error('no audio recording chunk type found')
+        }
+        let blob = new Blob(this.chunks, { type: mimeType })
         this.chunks = []
-        resolve(blob)
+        this.blobTypes.clear()
+        resolve({ blob, mimeType })
       })
     })
     this.mediaRecorder.start()
   }
 
-  stop(): Promise<Blob> {
+  stop(): Promise<Recording> {
     this.mediaRecorder.stop()
     return this.recordingPromise
   }
 
   static async create() {
+    const mimeTypes = ['audio/wav'];
+    let mimeType = null
+    for (const mimeTypeToTest of mimeTypes) {
+      if (MediaRecorder.isTypeSupported(mimeTypeToTest)) {
+        console.log(`MediaRecorder supports ${mimeTypeToTest}`)
+        mimeType = mimeTypeToTest
+        break;
+      }
+    }
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    const mediaRecorder = new MediaRecorder(stream)
+    const mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
     return new VoiceRecorder(mediaRecorder)
   }
 }
@@ -46,7 +66,7 @@ function formatDuration(duration: number) {
 type State = 'IDLE' | 'RECORDING' | 'PLAYING'
 
 function App() {
-  let [recordings, setRecordings] = useState<Blob[]>([])
+  let [recordings, setRecordings] = useState<Recording[]>([])
   let [recorder, setRecorder] = useState<VoiceRecorder | null>(null)
   let [duration, setDuration] = useState(0)
   let [state, setState] = useState<State>('IDLE')
@@ -93,7 +113,7 @@ function App() {
       </div>
       <div id="conversation-container">
         {recordings.map((recording, index) => (
-          <ConversationEntry key={index} recording={recording} />
+          <ConversationEntry className="conversation-entry" key={index} recording={recording} />
         ))}
       </div>
     </>
